@@ -89,16 +89,13 @@ while True:
                 aire = cv2.contourArea(c)
                 if aire < aire_min:
                     continue
-                if aire < aire_inter:
-                    couleur = bleu
-                elif aire < aire_max:
-                    couleur = vert
-                else:
+    
+                elif aire > aire_max:
                     couleur = rouge
                     declenche_yolo = True
-                x, y, w, h = cv2.boundingRect(c)
-                cv2.rectangle(gris_bgr, (x, y), (x + w, y + h), couleur, 2)
-
+                    x, y, w, h = cv2.boundingRect(c)
+                    cv2.rectangle(gris_bgr, (x, y), (x + w, y + h), couleur, 2)
+                
             # confirmation par YOLO, seulement si un contour est rouge
             if declenche_yolo:
                 t_yolo = time.perf_counter()
