@@ -4,6 +4,7 @@ import time
 import numpy as np
 from ultralytics import YOLO
 from collections import deque
+from alertes import ClientAlertes
 
 from alertes import ClientAlertes, SuiviIntrusion
 from flux_video import FluxVideo
