@@ -31,7 +31,7 @@ Le service `ia-vision` de la stack `infra` est construit depuis ce dépôt (`Doc
 - La webcam est passée au conteneur avec `devices: /dev/video0` : **cela ne fonctionne que sur Linux**. Docker Desktop (Windows, macOS) ne donne pas accès aux webcams USB : utiliser le mode 2.
 - Le modèle `yolov8n.pt` est téléchargé **à la construction de l'image** : le conteneur fonctionne ensuite hors ligne, sur le hotspot de la table.
 - Pas de fenêtre d'affichage (`AFFICHAGE=0`) : les images sont visibles dans le dashboard.
-- Image d'environ 1,5 à 2 Go (PyTorch CPU) ; la construction demande Internet.
+- Image d'environ 2,5 Go (PyTorch CPU) ; la construction demande Internet (PyPI, download.pytorch.org, GitHub pour le modèle).
 
 ### Mode 2 : directement sur le PC (Windows, macOS, ou Linux sans Docker)
 ```
