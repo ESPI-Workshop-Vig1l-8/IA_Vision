@@ -4,14 +4,14 @@
 FROM python:3.12-slim
 WORKDIR /app
 
-# opencv-python (pulled by ultralytics) needs libGL and glib
-RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
-
-# PyTorch CPU first (the default wheel bundles ~3 GB of CUDA libraries)
+# PyTorch CPU first (the default wheel bundles ~3 GB of CUDA libraries), then
+# the headless OpenCV instead of the desktop one pulled by ultralytics: no
+# window in a container, and no system libraries (libGL) to install
 COPY requirements.txt .
 RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r requirements.txt \
+    && pip uninstall -y opencv-python \
+    && pip install --no-cache-dir opencv-python-headless
 
 # YOLO weights downloaded at build time: the container then runs offline
 # on the table hotspot
