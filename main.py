@@ -9,11 +9,13 @@ from alertes import ClientAlertes
 from alertes import ClientAlertes, SuiviIntrusion
 from flux_video import FluxVideo
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
+import importlib
+import importlib.util
+
+dotenv_spec = importlib.util.find_spec("dotenv")
+if dotenv_spec is not None:
+    dotenv_module = importlib.import_module("dotenv")
+    dotenv_module.load_dotenv()
 
 # configuration (fichier .env, voir .env.example.txt)
 source_camera = os.environ.get("CAMERA", "0")          # index de la webcam, ou chemin/URL d'une vidéo
