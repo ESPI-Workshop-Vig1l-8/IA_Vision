@@ -1,8 +1,26 @@
+import os
 import cv2
 import time
 import numpy as np
 from ultralytics import YOLO
 from collections import deque
+
+from alertes import ClientAlertes, SuiviIntrusion
+from flux_video import FluxVideo
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+# configuration (fichier .env, voir .env.example.txt)
+source_camera = os.environ.get("CAMERA", "0")          # index de la webcam, ou chemin/URL d'une vidéo
+affichage = os.environ.get("AFFICHAGE", "1") == "1"     # 0 : pas de fenêtre (serveur sans écran)
+port_flux = int(os.environ.get("STREAM_PORT", "8000"))  # 0 : pas de flux vidéo pour le dashboard
+url_backend = os.environ.get("BACKEND_URL", "http://127.0.0.1:10443")
+appareil = os.environ.get("DEVICE_ID", "VIG1L-8-NODE04")  # nœud dont la LED clignote sur intrusion confirmée
+duree_confirmation = float(os.environ.get("CONFIRMATION_S", "3"))
 
 images_apprentissage = 60
 seuil_lumiere = 0.4
@@ -21,7 +39,7 @@ jaune = (0, 255, 255)
 blanc = (255, 255, 255)
 
 # déclaration de la variable camera
-camera = cv2.VideoCapture(0)
+camera = cv2.VideoCapture(int(source_camera) if source_camera.isdigit() else source_camera)
 
 # définition zone minimale et maximale de l'aire de détection
 aire_min = 4000
@@ -34,6 +52,13 @@ noyau = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
 
 # échauffement de YOLO : la 1ère inférence est lente, on la fait avant la boucle
 modele_yolo(np.zeros((480, 640, 3), dtype=np.uint8), imgsz=yolo_imgsz, verbose=False)
+
+# flux vidéo pour le dashboard et alertes envoyées au backend
+flux = FluxVideo(port_flux, url_backend) if port_flux else None
+if flux:
+    flux.demarrer()
+suivi = SuiviIntrusion(ClientAlertes(url_backend, os.environ.get("API_SERVICE_TOKEN", "")),
+                       appareil, duree_confirmation)
 
 # initialisation des compteurs
 surface = 640 * 480
@@ -128,6 +153,9 @@ while True:
     elif debut_intrusion is not None and maintenant_t - derniere_detection > delai_persistence:
         debut_intrusion = None
 
+    # alertes : "warning" à la première personne, "confirmed" si la présence dure
+    suivi.mettre_a_jour(debut_intrusion, maintenant_t, personnes)
+
     if debut_intrusion is not None:
         cv2.putText(gris_bgr, f"INTRUSION : {maintenant_t - debut_intrusion:.1f} s", (10, 120),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, rouge, 2)
@@ -148,11 +176,18 @@ while True:
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, vert, 2)
     cv2.putText(gris_bgr, f"Latence : {latence_moy:.0f} ms (YOLO : {yolo_ms:.0f} ms)", (10, 60),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, couleur_lat, 2)
-    cv2.imshow("Sentinel-X", gris_bgr)
+    if flux:
+        flux.publier(gris_bgr)
 
-    # presser q pour quitter la fenêtre
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
+    if affichage:
+        cv2.imshow("Sentinel-X", gris_bgr)
+
+        # presser q pour quitter la fenêtre
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
 
 camera.release()
-cv2.destroyAllWindows()
+if flux:
+    flux.arreter()
+if affichage:
+    cv2.destroyAllWindows()
