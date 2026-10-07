@@ -45,3 +45,11 @@ alertes à un backend central tout en exposant un flux vidéo pour le dashboard.
 ```bash
 pip install ultralytics opencv-python requests python-dotenv
 python main.py        # appuyer sur q pour quitter la fenêtre
+## Lancement en conteneur Docker (serveur **Linux uniquement**)
+
+Le service `ia-vision` de la stack `infra` est construit depuis ce dépôt (`Dockerfile`) et démarre avec `docker compose up -d`.
+
+- La webcam est passée au conteneur avec `devices: /dev/video0` : **cela ne fonctionne que sur Linux**. Docker Desktop (Windows, macOS) ne donne pas accès aux webcams USB : y lancer `python main.py` directement, et indiquer au dashboard où trouver le flux (`VISION_UPSTREAM` dans le `.env` de l'infra, voir son README).
+- Image d'environ 2,5 Go : PyTorch CPU, OpenCV headless, modèle `yolov8n.pt` inclus. Le conteneur fonctionne hors ligne sur le hotspot de la table ; seule la construction demande Internet.
+- Pas de fenêtre (`AFFICHAGE=0`) : les images annotées sont visibles dans le dashboard.
+- Côté serveur : `getent group video` (gid à mettre dans `VIDEO_GID` s'il ne vaut pas 44) et `v4l2-ctl --list-devices` (`VISION_CAMERA` si la webcam n'est pas `/dev/video0`).
