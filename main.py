@@ -18,7 +18,7 @@ if dotenv_spec is not None:
     dotenv_module.load_dotenv()
 
 # configuration (fichier .env, voir .env.example.txt)
-source_camera = os.environ.get("CAMERA", "0")          # index de la webcam, ou chemin/URL d'une vidéo
+source_camera = os.environ.get("CAMERA", os.environ.get("CAMERA_INDEX", "0"))          # index de la webcam, ou chemin/URL d'une vidéo
 affichage = os.environ.get("AFFICHAGE", "1") == "1"     # 0 : pas de fenêtre (serveur sans écran)
 port_flux = int(os.environ.get("STREAM_PORT", "8000"))  # 0 : pas de flux vidéo pour le dashboard
 url_backend = os.environ.get("BACKEND_URL", "http://127.0.0.1:10443")
